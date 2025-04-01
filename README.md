@@ -1,54 +1,21 @@
-# React + TypeScript + Vite
+# 遊戲介紹
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 功能介紹
 
-Currently, two official plugins are available:
+本遊戲提供以下核心功能：
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **角色創建**：玩家可自定義角色名稱並選擇初始生物，開啟專屬冒險旅程。
+- **生物捕捉與訓練**：玩家可透過捕捉機制收集並培養多種生物，打造強大的隊伍。
+- **回合制戰鬥系統**：設計策略性回合制戰鬥，玩家需根據生物屬性與技能制定最佳戰略。
+- **地圖探索**：支援像素風格地圖探索，玩家可發現隱藏道具與挑戰，增添遊戲樂趣。
 
-## Expanding the ESLint configuration
+### 自動顯示新捕捉的帕魯
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+成功捕捉帕魯後，系統會在返回世界地圖時自動打開菜單，方便玩家立即查看新加入的帕魯。
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+### 主要帕魯標記
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- 主要使用的帕魯（列表中的第一個）會以藍色背景高亮顯示，並帶有"➤"標記。
+- 所有帕魯均會顯示其名稱、等級、HP、屬性和技能等詳細資訊。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+這些功能共同構建了一個充滿懷舊感與挑戰性的遊戲體驗，讓玩家沉浸於像素冒險的世界中。
