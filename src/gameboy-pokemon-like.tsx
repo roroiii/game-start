@@ -78,8 +78,7 @@ const GameBoyPokemon = () => {
   const [activeBattleId, setActiveBattleId] = useState<string | null>(null);
   const [currentTurn, setCurrentTurn] = useState<'player' | 'enemy'>('player');
   const [message, setMessage] = useState<string>('歡迎來到帕魯生物世界！');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [debugMode, setDebugMode] = useState<boolean>(true);
+  const [debugMode] = useState<boolean>(true);
   const [canCapture, setCanCapture] = useState(false); // 戰鬥中是否可以捕捉
 
   // 初始化遊戲
@@ -469,22 +468,41 @@ const GameBoyPokemon = () => {
   };
 
   // 獲取怪獸顏色
-  const getMonsterColor = (monster: Monster) => {
+  // 獲取對應的帕魯圖片
+  const getWildPalImage = (monster: Monster) => {
     switch (monster.elementType) {
       case 'fire':
-        return 'bg-red-500';
+        return 'pixel-fire-palu.svg';
       case 'water':
-        return 'bg-blue-500';
+        return 'pixel-water-palu.svg';
       case 'grass':
-        return 'bg-green-500';
+        return 'pixel-grass-palu.svg';
       case 'electric':
-        return 'bg-yellow-400';
+        return 'pixel-electric-palu.svg';
       case 'dark':
-        return 'bg-purple-800';
+        return 'pixel-night-palu.svg';
       default:
-        return 'bg-gray-500';
+        return 'pixel-rock-palu.svg';
     }
   };
+
+  // 保留原來的顏色函數用於其他地方
+  // const getMonsterColor = (monster: Monster) => {
+  //   switch (monster.elementType) {
+  //     case 'fire':
+  //       return 'bg-red-500';
+  //     case 'water':
+  //       return 'bg-blue-500';
+  //     case 'grass':
+  //       return 'bg-green-500';
+  //     case 'electric':
+  //       return 'bg-yellow-400';
+  //     case 'dark':
+  //       return 'bg-purple-800';
+  //     default:
+  //       return 'bg-gray-500';
+  //   }
+  // };
 
   // 獲取當前戰鬥中的怪獸（用於渲染）
   const currentBattleMonster = getBattleMonster();
@@ -512,22 +530,25 @@ const GameBoyPokemon = () => {
                   left: `${player.x * 24}px`,
                   top: `${player.y * 24}px`,
                 }}
-              />
+              >
+                <img src="/pal/pixel-plush.svg" alt={playerMonsters[0].name} className="w-full h-full" />
+              </div>
 
               {/* 怪獸 */}
               {allMonsters.map((monster) => (
                 <div
                   key={monster.id}
-                  className={`absolute w-6 h-6 ${getMonsterColor(
-                    monster
-                  )} rounded-full flex items-center justify-center text-white text-xs`}
+                  className="absolute w-6 h-6 flex items-center justify-center"
                   style={{
                     left: `${(monster.x ?? 0) * 24}px`,
                     top: `${(monster.y ?? 0) * 24}px`,
                     opacity: monster.hp / monster.maxHp, // 怪獸HP越低，顯示越透明
                   }}
                 >
-                  {monster.hp <= monster.maxHp / 2 ? '!' : ''}
+                  <img src={`/pal/${getWildPalImage(monster)}`} alt={monster.name} className="w-full h-full" />
+                  {monster.hp <= monster.maxHp / 2 && (
+                    <div className="absolute text-xs font-bold text-yellow-300">!</div>
+                  )}
                 </div>
               ))}
             </div>
@@ -542,7 +563,13 @@ const GameBoyPokemon = () => {
               {currentBattleMonster && (
                 <div className="h-1/2 flex items-center justify-center">
                   <div className="text-center">
-                    <div className={`w-12 h-12 ${getMonsterColor(currentBattleMonster)} rounded-full mx-auto`}></div>
+                    <div className="w-16 h-16 mx-auto">
+                      <img
+                        src={`/pal/${getWildPalImage(currentBattleMonster)}`}
+                        alt={currentBattleMonster.name}
+                        className="w-full h-full"
+                      />
+                    </div>
                     <div className="mt-2">
                       {currentBattleMonster.name}
                       <span className="text-xs ml-1">Lv.{currentBattleMonster.level}</span>
@@ -565,7 +592,13 @@ const GameBoyPokemon = () => {
               {/* 玩家 */}
               <div className="h-1/2 flex items-center justify-center">
                 <div className="text-center">
-                  <div className={`w-12 h-12 ${getMonsterColor(playerMonsters[0])} rounded-full mx-auto`}></div>
+                  <div className="w-16 h-16 mx-auto">
+                    <img
+                      src={`/pal/${getWildPalImage(playerMonsters[0])}`}
+                      alt={playerMonsters[0].name}
+                      className="w-full h-full"
+                    />
+                  </div>
                   <div className="mt-2">
                     {playerMonsters[0].name} Lv.{playerMonsters[0].level}
                   </div>
@@ -600,7 +633,13 @@ const GameBoyPokemon = () => {
                 {playerMonsters.map((monster, index) => (
                   <div key={monster.id} className={`mb-3 p-2 ${index === 0 ? 'bg-blue-100 rounded' : ''}`}>
                     <div className="flex items-center">
-                      <div className={`w-6 h-6 ${getMonsterColor(monster)} rounded-full mr-2`}></div>
+                      <div className="w-6 h-6 mr-2">
+                        <img
+                          src={monster.isPlayer ? '/pal/pixel-plush.svg' : `/pal/${getWildPalImage(monster)}`}
+                          alt={monster.name}
+                          className="w-full h-full"
+                        />
+                      </div>
                       <span className="font-bold">
                         {index === 0 ? '➤ ' : ''}
                         {monster.name}
