@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 
+// 擴展怪獸類型，加入帕魯特有的屬性
 type Monster = {
   id: string;
   name: string;
   type: string;
+  elementType?: 'fire' | 'water' | 'grass' | 'electric' | 'dark' | 'neutral'; // 帕魯元素類型
   maxHp: number;
   hp: number;
   moves: string[];
@@ -12,6 +14,9 @@ type Monster = {
   y?: number;
   isWild?: boolean;
   isPlayer?: boolean;
+  // 帕魯特有屬性
+  workability?: number; // 工作能力值 (0-100)
+  specialSkill?: string; // 特殊技能
 };
 
 type Player = {
@@ -20,37 +25,81 @@ type Player = {
   direction: 'up' | 'down' | 'left' | 'right';
 };
 
+// 怪獸模板 - 融合寶可夢和帕魯元素
+const monsterTemplates = [
+  {
+    name: '花花獸',
+    type: '草',
+    elementType: 'grass',
+    maxHp: 20,
+    moves: ['藤鞭', '種子炸彈', '光合作用'],
+    level: 5,
+    workability: 65,
+    specialSkill: '農耕',
+  },
+  {
+    name: '火龍獸',
+    type: '火',
+    elementType: 'fire',
+    maxHp: 18,
+    moves: ['火花', '烈焰衝擊', '溫暖之體'],
+    level: 5,
+    workability: 70,
+    specialSkill: '冶煉',
+  },
+  {
+    name: '水水獸',
+    type: '水',
+    elementType: 'water',
+    maxHp: 22,
+    moves: ['水槍', '泡沫', '潛水'],
+    level: 5,
+    workability: 60,
+    specialSkill: '釣魚',
+  },
+  // 帕魯特有生物
+  {
+    name: '帕魯貓',
+    type: '一般',
+    elementType: 'neutral',
+    maxHp: 25,
+    moves: ['撲擊', '挖掘', '萌態'],
+    level: 5,
+    workability: 85,
+    specialSkill: '挖掘',
+  },
+];
+
 const GameBoyPokemon = () => {
   const [gameState, setGameState] = useState<'title' | 'world' | 'battle' | 'menu'>('title');
   const [player, setPlayer] = useState<Player>({ x: 5, y: 5, direction: 'down' });
-  const [allMonsters, setAllMonsters] = useState<Monster[]>([]); // 存儲所有怪獸的全局狀態
+  const [allMonsters, setAllMonsters] = useState<Monster[]>([]);
   const [playerMonsters, setPlayerMonsters] = useState<Monster[]>([]);
-  const [activeBattleId, setActiveBattleId] = useState<string | null>(null); // 存儲當前戰鬥的怪獸ID
-  const [currentTurn, setCurrentTurn] = useState<'player' | 'enemy'>('player'); // 戰鬥中的當前回合
-  const [message, setMessage] = useState<string>('歡迎來到寶可生物世界！');
+  const [activeBattleId, setActiveBattleId] = useState<string | null>(null);
+  const [currentTurn, setCurrentTurn] = useState<'player' | 'enemy'>('player');
+  const [message, setMessage] = useState<string>('歡迎來到帕魯生物世界！');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [debugMode, setDebugMode] = useState<boolean>(true); // 調試模式
+  const [debugMode, setDebugMode] = useState<boolean>(true);
+  const [canCapture, setCanCapture] = useState(false); // 戰鬥中是否可以捕捉
 
   // 初始化遊戲
   useEffect(() => {
-    // 怪獸模板
-    const monsterTemplates = [
-      { name: '花花獸', type: '草', maxHp: 20, moves: ['藤鞭', '種子炸彈'], level: 5 },
-      { name: '火龍獸', type: '火', maxHp: 18, moves: ['火花', '烈焰衝擊'], level: 5 },
-      { name: '水水獸', type: '水', maxHp: 22, moves: ['水槍', '泡沫'], level: 5 },
-    ];
+    // 怪獸模板 - 融合寶可夢和帕魯元素
 
     // 為玩家創建初始怪獸
-    const starterTemplate = monsterTemplates[Math.floor(Math.random() * monsterTemplates.length)];
-    const playerMonster = {
+    const starterTemplate = monsterTemplates[Math.floor(Math.random() * 3)]; // 只從前三個基本寵物中選擇
+    const playerMonster: Monster = {
       id: 'player-1',
       name: starterTemplate.name,
       type: starterTemplate.type,
+      elementType: starterTemplate.elementType as 'fire' | 'water' | 'grass' | 'electric' | 'dark' | 'neutral',
       maxHp: starterTemplate.maxHp,
       hp: starterTemplate.maxHp,
       moves: [...starterTemplate.moves],
       level: starterTemplate.level,
       isPlayer: true,
+      workability: starterTemplate.workability,
+      specialSkill: starterTemplate.specialSkill,
     };
 
     setPlayerMonsters([playerMonster]);
@@ -63,6 +112,7 @@ const GameBoyPokemon = () => {
         id: `wild-${i}`,
         name: template.name,
         type: template.type,
+        elementType: template.elementType as 'fire' | 'water' | 'grass' | 'electric' | 'dark' | 'neutral',
         maxHp: template.maxHp,
         hp: template.maxHp,
         moves: [...template.moves],
@@ -70,6 +120,8 @@ const GameBoyPokemon = () => {
         x: Math.floor(Math.random() * 10),
         y: Math.floor(Math.random() * 10),
         isWild: true,
+        workability: template.workability,
+        specialSkill: template.specialSkill,
       });
     }
 
@@ -100,7 +152,7 @@ const GameBoyPokemon = () => {
   const handleKeyPress = (key: string) => {
     if (gameState === 'title') {
       setGameState('world');
-      setMessage('使用方向鍵移動，尋找怪獸！A鍵進入菜單，B鍵在戰鬥中逃跑');
+      setMessage('使用方向鍵移動，尋找帕魯生物！A鍵進入菜單，B鍵在戰鬥中逃跑或嘗試捕捉');
       return;
     }
 
@@ -145,7 +197,7 @@ const GameBoyPokemon = () => {
 
         // 檢查是否還有怪獸
         if (allMonsters.length === 0) {
-          setMessage('恭喜你！你已經擊敗了所有的野生怪獸！');
+          setMessage('恭喜你！你已經擊敗或捕捉了所有的帕魯生物！');
           return;
         }
 
@@ -165,8 +217,12 @@ const GameBoyPokemon = () => {
             playerAttack();
             break;
           case 'b':
-            // 嘗試逃跑
-            attemptEscape();
+            // 根據情況決定是嘗試捕捉還是逃跑
+            if (canCapture) {
+              attemptCapture();
+            } else {
+              attemptEscape();
+            }
             break;
           default:
             break;
@@ -191,8 +247,12 @@ const GameBoyPokemon = () => {
     setGameState('battle');
     setMessage(`野生的${monster.name}出現了！`);
 
+    // 判斷是否可以捕捉
+    const captureAllowed = monster.hp / monster.maxHp < 0.7; // HP低於70%時可以嘗試捕捉
+    setCanCapture(captureAllowed);
+
     if (debugMode) {
-      console.log(`開始戰鬥，怪獸ID: ${monsterId}, HP: ${monster.hp}/${monster.maxHp}`);
+      console.log(`開始戰鬥，怪獸ID: ${monsterId}, HP: ${monster.hp}/${monster.maxHp}, 可捕捉: ${captureAllowed}`);
     }
   };
 
@@ -203,15 +263,44 @@ const GameBoyPokemon = () => {
 
     if (!enemyMonster) return;
 
-    // 計算傷害
-    const damage = Math.floor(2 + Math.random() * 3);
-    const newEnemyHp = Math.max(0, enemyMonster.hp - damage);
+    // 選擇招式 (此處隨機選擇)
+    const moveIndex = Math.floor(Math.random() * playerMonster.moves.length);
+    const selectedMove = playerMonster.moves[moveIndex];
 
-    // 更新消息
-    setMessage(`${playerMonster.name}使用了${playerMonster.moves[0]}！造成${damage}點傷害！`);
+    // 計算傷害 (考慮屬性相克)
+    let damage = Math.floor(2 + Math.random() * 3);
+    // 帕魯特有的屬性相克系統
+    if (playerMonster.elementType && enemyMonster.elementType) {
+      if (
+        (playerMonster.elementType === 'fire' && enemyMonster.elementType === 'grass') ||
+        (playerMonster.elementType === 'water' && enemyMonster.elementType === 'fire') ||
+        (playerMonster.elementType === 'grass' && enemyMonster.elementType === 'water') ||
+        (playerMonster.elementType === 'electric' && enemyMonster.elementType === 'water')
+      ) {
+        damage = Math.floor(damage * 1.5);
+        setMessage(`效果拔群！${playerMonster.name}使用了${selectedMove}！造成${damage}點傷害！`);
+      } else if (
+        (playerMonster.elementType === 'grass' && enemyMonster.elementType === 'fire') ||
+        (playerMonster.elementType === 'fire' && enemyMonster.elementType === 'water') ||
+        (playerMonster.elementType === 'water' && enemyMonster.elementType === 'grass')
+      ) {
+        damage = Math.floor(damage * 0.5);
+        setMessage(`效果不太好...${playerMonster.name}使用了${selectedMove}！造成${damage}點傷害！`);
+      } else {
+        setMessage(`${playerMonster.name}使用了${selectedMove}！造成${damage}點傷害！`);
+      }
+    } else {
+      setMessage(`${playerMonster.name}使用了${selectedMove}！造成${damage}點傷害！`);
+    }
+
+    const newEnemyHp = Math.max(0, enemyMonster.hp - damage);
 
     // 更新怪獸HP
     updateMonsterState(enemyMonster.id, { hp: newEnemyHp });
+
+    // 更新捕捉狀態
+    const captureAllowed = newEnemyHp / enemyMonster.maxHp < 0.7;
+    setCanCapture(captureAllowed);
 
     // 檢查怪獸是否被擊敗
     if (newEnemyHp <= 0) {
@@ -230,12 +319,38 @@ const GameBoyPokemon = () => {
 
     if (!enemyMonster) return;
 
-    // 計算傷害
-    const damage = Math.floor(1 + Math.random() * 3);
-    const newPlayerHp = Math.max(0, playerMonster.hp - damage);
+    // 選擇招式
+    const moveIndex = Math.floor(Math.random() * enemyMonster.moves.length);
+    const selectedMove = enemyMonster.moves[moveIndex];
 
-    // 更新消息
-    setMessage(`${enemyMonster.name}使用了${enemyMonster.moves[0]}！造成${damage}點傷害！`);
+    // 計算傷害
+    let damage = Math.floor(1 + Math.random() * 3);
+
+    // 屬性相克系統
+    if (enemyMonster.elementType && playerMonster.elementType) {
+      if (
+        (enemyMonster.elementType === 'fire' && playerMonster.elementType === 'grass') ||
+        (enemyMonster.elementType === 'water' && playerMonster.elementType === 'fire') ||
+        (enemyMonster.elementType === 'grass' && playerMonster.elementType === 'water') ||
+        (enemyMonster.elementType === 'electric' && playerMonster.elementType === 'water')
+      ) {
+        damage = Math.floor(damage * 1.5);
+        setMessage(`效果拔群！${enemyMonster.name}使用了${selectedMove}！造成${damage}點傷害！`);
+      } else if (
+        (enemyMonster.elementType === 'grass' && playerMonster.elementType === 'fire') ||
+        (enemyMonster.elementType === 'fire' && playerMonster.elementType === 'water') ||
+        (enemyMonster.elementType === 'water' && playerMonster.elementType === 'grass')
+      ) {
+        damage = Math.floor(damage * 0.5);
+        setMessage(`效果不太好...${enemyMonster.name}使用了${selectedMove}！造成${damage}點傷害！`);
+      } else {
+        setMessage(`${enemyMonster.name}使用了${selectedMove}！造成${damage}點傷害！`);
+      }
+    } else {
+      setMessage(`${enemyMonster.name}使用了${selectedMove}！造成${damage}點傷害！`);
+    }
+
+    const newPlayerHp = Math.max(0, playerMonster.hp - damage);
 
     // 更新玩家怪獸HP
     setPlayerMonsters([{ ...playerMonster, hp: newPlayerHp }]);
@@ -308,6 +423,69 @@ const GameBoyPokemon = () => {
     }
   };
 
+  // 嘗試捕捉怪獸
+  const attemptCapture = () => {
+    const enemyMonster = getBattleMonster();
+    if (!enemyMonster) return;
+
+    // 計算捕捉成功率
+    const hpRatio = enemyMonster.hp / enemyMonster.maxHp;
+    const captureRate = 0.8 * (1 - hpRatio); // HP越低越容易捕捉
+
+    // 嘗試捕捉
+    if (Math.random() < captureRate) {
+      // 捕捉成功
+      setMessage(`成功捕捉了 ${enemyMonster.name}！`);
+
+      // 將怪獸加入玩家隊伍
+      const capturedMonster: Monster = {
+        ...enemyMonster,
+        id: `player-${playerMonsters.length + 1}`,
+        isWild: false,
+        isPlayer: true,
+        hp: Math.max(Math.floor(enemyMonster.maxHp / 2), 1), // 捕捉後HP為最大值的一半
+      };
+
+      // 從野生怪獸中移除
+      setAllMonsters((prev) => prev.filter((m) => m.id !== enemyMonster.id));
+
+      // 加入玩家隊伍
+      setPlayerMonsters((prev) => [...prev, capturedMonster]);
+
+      setTimeout(() => {
+        setGameState('world');
+        setMessage(`${enemyMonster.name} 加入了你的隊伍！`);
+        // 捕捉成功後自動打開菜單展示新捕捉的怪獸
+        setTimeout(() => {
+          setGameState('menu');
+        }, 1000);
+      }, 1500);
+    } else {
+      // 捕捉失敗
+      setMessage(`${enemyMonster.name} 掙脫了！`);
+      setCurrentTurn('enemy');
+      setTimeout(enemyAttack, 1000);
+    }
+  };
+
+  // 獲取怪獸顏色
+  const getMonsterColor = (monster: Monster) => {
+    switch (monster.elementType) {
+      case 'fire':
+        return 'bg-red-500';
+      case 'water':
+        return 'bg-blue-500';
+      case 'grass':
+        return 'bg-green-500';
+      case 'electric':
+        return 'bg-yellow-400';
+      case 'dark':
+        return 'bg-purple-800';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
   // 獲取當前戰鬥中的怪獸（用於渲染）
   const currentBattleMonster = getBattleMonster();
 
@@ -317,8 +495,9 @@ const GameBoyPokemon = () => {
       case 'title':
         return (
           <div className="flex flex-col items-center justify-center h-64 text-center">
-            <div className="text-2xl mb-4">寶可生物冒險</div>
+            <div className="text-2xl mb-4">帕魯生物冒險</div>
             <div className="mb-6">按任意鍵開始遊戲</div>
+            <div className="text-sm">融合了寶可夢與幻獸帕魯的元素</div>
           </div>
         );
 
@@ -328,7 +507,7 @@ const GameBoyPokemon = () => {
             <div className="border-4 border-gray-800 bg-green-200 w-64 h-64 relative">
               {/* 玩家 */}
               <div
-                className="absolute w-6 h-6 bg-blue-500 rounded-full"
+                className="absolute w-6 h-6 bg-blue-200 rounded-full"
                 style={{
                   left: `${player.x * 24}px`,
                   top: `${player.y * 24}px`,
@@ -339,7 +518,9 @@ const GameBoyPokemon = () => {
               {allMonsters.map((monster) => (
                 <div
                   key={monster.id}
-                  className="absolute w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs"
+                  className={`absolute w-6 h-6 ${getMonsterColor(
+                    monster
+                  )} rounded-full flex items-center justify-center text-white text-xs`}
                   style={{
                     left: `${(monster.x ?? 0) * 24}px`,
                     top: `${(monster.y ?? 0) * 24}px`,
@@ -361,10 +542,10 @@ const GameBoyPokemon = () => {
               {currentBattleMonster && (
                 <div className="h-1/2 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-12 h-12 bg-red-500 rounded-full mx-auto"></div>
+                    <div className={`w-12 h-12 ${getMonsterColor(currentBattleMonster)} rounded-full mx-auto`}></div>
                     <div className="mt-2">
                       {currentBattleMonster.name}
-                      <span className="text-xs ml-1">({currentBattleMonster.id})</span>
+                      <span className="text-xs ml-1">Lv.{currentBattleMonster.level}</span>
                     </div>
                     <div className="mt-1">
                       HP: {currentBattleMonster.hp}/{currentBattleMonster.maxHp}
@@ -384,7 +565,7 @@ const GameBoyPokemon = () => {
               {/* 玩家 */}
               <div className="h-1/2 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-500 rounded-full mx-auto"></div>
+                  <div className={`w-12 h-12 ${getMonsterColor(playerMonsters[0])} rounded-full mx-auto`}></div>
                   <div className="mt-2">
                     {playerMonsters[0].name} Lv.{playerMonsters[0].level}
                   </div>
@@ -401,6 +582,11 @@ const GameBoyPokemon = () => {
                   </div>
                 </div>
               </div>
+
+              {/* 戰鬥控制提示 */}
+              <div className="absolute bottom-1 right-1 text-xs bg-white px-1 rounded">
+                {canCapture ? 'B:捕捉' : 'B:逃跑'} | A:攻擊
+              </div>
             </div>
           </div>
         );
@@ -408,33 +594,44 @@ const GameBoyPokemon = () => {
       case 'menu':
         return (
           <div className="flex flex-col items-center">
-            <div className="border-4 border-gray-800 bg-white w-64 h-64 p-4">
-              <div className="text-xl mb-4">菜單</div>
-              <ul>
-                <li className="mb-2">
-                  <span className="font-bold">怪獸:</span> {playerMonsters[0].name}
-                  (Lv.{playerMonsters[0].level}, HP:{playerMonsters[0].hp}/{playerMonsters[0].maxHp})
-                </li>
-                <li className="mb-2">
-                  <span className="font-bold">招式:</span> {playerMonsters[0].moves.join(', ')}
-                </li>
-                <li className="mb-2">
-                  <span className="font-bold">剩餘野生怪獸:</span> {allMonsters.length}
-                </li>
-                {debugMode && (
-                  <li className="mb-2">
-                    <span className="font-bold">怪獸狀態:</span>
-                    <div className="text-xs mt-1">
-                      {allMonsters.map((m) => (
-                        <div key={m.id}>
-                          {m.id}: {m.hp}/{m.maxHp}
-                        </div>
-                      ))}
+            <div className="border-4 border-gray-800 bg-white w-64 h-64 p-4 overflow-auto">
+              <div className="text-xl mb-4">帕魯生物清單</div>
+              <div className="max-h-40 overflow-y-auto mb-2 border-b-2 border-gray-200 pb-2">
+                {playerMonsters.map((monster, index) => (
+                  <div key={monster.id} className={`mb-3 p-2 ${index === 0 ? 'bg-blue-100 rounded' : ''}`}>
+                    <div className="flex items-center">
+                      <div className={`w-6 h-6 ${getMonsterColor(monster)} rounded-full mr-2`}></div>
+                      <span className="font-bold">
+                        {index === 0 ? '➤ ' : ''}
+                        {monster.name}
+                      </span>
+                      <span className="text-xs ml-2">Lv.{monster.level}</span>
                     </div>
-                  </li>
-                )}
-              </ul>
-              <div className="mt-4 p-2 bg-gray-100 text-center rounded">按B返回遊戲</div>
+                    <div className="flex justify-between text-xs mt-1">
+                      <span>
+                        HP: {monster.hp}/{monster.maxHp}
+                      </span>
+                      <span>{monster.type}系</span>
+                    </div>
+                    <div className="text-xs mt-1">
+                      <span className="mr-1">技能: {monster.specialSkill || '無'}</span>
+                    </div>
+                    <div className="text-xs mt-1">
+                      <span>招式: {monster.moves.join(', ')}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 text-sm">
+                <div>
+                  <span className="font-bold">帕魯總數:</span> {playerMonsters.length}
+                </div>
+                <div>
+                  <span className="font-bold">剩餘野生帕魯:</span> {allMonsters.length}
+                </div>
+                <div className="text-xs mt-1 text-gray-600">使用主要帕魯: {playerMonsters[0]?.name}</div>
+              </div>
+              <div className="mt-3 p-2 bg-gray-100 text-center rounded text-sm">按B返回遊戲</div>
             </div>
           </div>
         );
